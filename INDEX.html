@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Table Duty Roster</title>
+<style>
+  :root{
+    --ink:#1B2A22;
+    --green:#1F3D2B;
+    --green-light:#2E5940;
+    --gold:#C9A227;
+    --gold-soft:#EADFB4;
+    --paper:#F3F2EC;
+    --card:#FFFFFF;
+    --line:#DDD8C8;
+    --taken:#B3472B;
+    --taken-bg:#FBEAE5;
+    --free-bg:#E9F1EA;
+    --free:#2E5940;
+    --shadow: 0 1px 2px rgba(27,42,34,0.06), 0 4px 14px rgba(27,42,34,0.06);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    background:var(--green);
+    color:#fff;
+    padding:22px clamp(16px,4vw,40px);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  header .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+  }
+  header .brand .mark{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-size:1.55rem;
+    letter-spacing:0.5px;
+    font-weight:700;
+    color:var(--gold);
+  }
+  header .brand .sub{
+    font-size:0.8rem;
+    opacity:0.75;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+  }
+  header .storage-note{
+    font-size:0.72rem;
+    opacity:0.7;
+    max-width:340px;
+    text-align:right;
+    line-height:1.4;
+  }
+  nav{
+    display:flex;
+    gap:6px;
+    background:var(--green-light);
+    padding:0 clamp(16px,4vw,40px);
+    overflow-x:auto;
+  }
+  nav button{
+    background:transparent;
+    border:none;
+    color:#EDEAD9;
+    padding:13px 16px;
+    font-size:0.86rem;
+    letter-spacing:0.02em;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+    font-weight:600;
+  }
+  nav button:hover{ color:#fff; }
+  nav button.active{
+    color:#fff;
+    border-bottom-color:var(--gold);
+  }
+  main{
+    max-width:980px;
+    margin:0 auto;
+    padding:clamp(16px,4vw,34px);
+  }
+  .panel{ display:none; animation:fade .18s ease; }
+  .panel.active{ display:block; }
+  @keyframes fade{ from{opacity:0; transform:translateY(3px);} to{opacity:1; transform:none;} }
+
+  h2{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-size:1.3rem;
+    margin:0 0 4px;
+    color:var(--green);
+  }
+  .lead{
+    color:#5b6b60;
+    font-size:0.87rem;
+    margin:0 0 18px;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px 20px;
+    margin-bottom:18px;
+  }
+  .row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  label{
+    display:block;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:#6b7a70;
+    margin-bottom:5px;
+    font-weight:700;
+  }
+  input[type=text], input[type=date], select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:0.92rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus, button:focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:1px;
+  }
+  .field{ flex:1; min-width:180px; }
+  button.primary{
+    background:var(--green);
+    color:#fff;
+    border:none;
+    padding:10px 18px;
+    border-radius:8px;
+    font-size:0.88rem;
+    font-weight:700;
+    cursor:pointer;
+    letter-spacing:0.02em;
+    align-self:flex-end;
+  }
+  button.primary:hover{ background:var(--green-light); }
+  button.ghost{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:9px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:0.85rem;
+  }
+  button.ghost:hover{ border-color:var(--green); }
+
+  ul.chips{ list-style:none; padding:0; margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px; }
+  ul.chips li{
+    background:var(--gold-soft);
+    border:1px solid #E1D18F;
+    color:#5b4a13;
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:0.83rem;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  ul.chips li button{
+    background:none;
+    border:none;
+    color:#8a3320;
+    cursor:pointer;
+    font-weight:800;
+    font-size:0.9rem;
+    line-height:1;
+    padding:0;
+  }
+  .empty{
+    color:#8a9690;
+    font-size:0.85rem;
+    font-style:italic;
+    padding:10px 0;
+  }
+
+  .table-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(190px,1fr));
+    gap:10px;
+    margin-top:14px;
+  }
+  .table-pick{
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:11px 12px;
+    background:#fff;
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    cursor:pointer;
+    transition:border-color .15s;
+  }
+  .table-pick:hover{ border-color:var(--green-light); }
+  .table-pick.disabled{
+    background:var(--taken-bg);
+    cursor:not-allowed;
+    opacity:0.85;
+  }
+  .table-pick input{ margin-top:3px; width:16px; height:16px; accent-color:var(--green); }
+  .table-pick .name{ font-weight:700; font-size:0.9rem; }
+  .table-pick .status{ font-size:0.75rem; color:#8a3320; display:block; margin-top:2px; }
+  .table-pick .status.free{ color:var(--free); }
+
+  .status-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(210px,1fr));
+    gap:12px;
+    margin-top:14px;
+  }
+  .status-card{
+    border-radius:9px;
+    padding:13px 14px;
+    border:1px solid var(--line);
+  }
+  .status-card.free{ background:var(--free-bg); border-color:#cfe3d3; }
+  .status-card.taken{ background:var(--taken-bg); border-color:#f0cfc4; }
+  .status-card .t-name{ font-weight:800; font-size:0.95rem; margin-bottom:5px; }
+  .status-card .t-who{ font-size:0.85rem; }
+  .status-card .t-who.free{ color:var(--free); }
+  .status-card .t-who.taken{ color:var(--taken); }
+  .status-card select{ margin-top:8px; }
+
+  table.history{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:14px;
+    font-size:0.87rem;
+  }
+  table.history th, table.history td{
+    text-align:left;
+    padding:9px 10px;
+    border-bottom:1px solid var(--line);
+  }
+  table.history th{
+    color:#6b7a70;
+    text-transform:uppercase;
+    font-size:0.68rem;
+    letter-spacing:0.06em;
+  }
+  table.history tr:hover td{ background:#faf9f4; }
+  .filters{ margin-bottom:6px; }
+
+  footer{
+    text-align:center;
+    font-size:0.72rem;
+    color:#8a9690;
+    padding:26px 16px 40px;
+  }
+  @media (max-width:560px){
+    header{ flex-direction:column; align-items:flex-start; }
+    header .storage-note{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="mark">Table Duty Roster</span>
+    <span class="sub">Staff &amp; Table Assignment</span>
+  </div>
+  <div class="storage-note">Data is saved in this browser's local storage on this device. Open this file the same way each time (same browser, same computer) to keep your records.</div>
+</header>
+
+<nav>
+  <button data-panel="setup" class="active">Staff &amp; Tables</button>
+  <button data-panel="assign">Assign Duty</button>
+  <button data-panel="status">Today's Status</button>
+  <button data-panel="history">View Records</button>
+</nav>
+
+<main>
+
+  <!-- SETUP PANEL -->
+  <section class="panel active" id="panel-setup">
+    <h2>Staff</h2>
+    <p class="lead">Add every staff member who can be assigned to a table.</p>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="staff-input">Staff name</label>
+          <input type="text" id="staff-input" placeholder="e.g. Ramesh">
+        </div>
+        <button class="primary" id="add-staff-btn">Add staff</button>
+      </div>
+      <ul class="chips" id="staff-chips"></ul>
+      <p class="empty" id="staff-empty">No staff added yet.</p>
+    </div>
+
+    <h2>Tables</h2>
+    <p class="lead">Add every table number or name in your restaurant.</p>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="table-input">Table number / name</label>
+          <input type="text" id="table-input" placeholder="e.g. Table 5 or Patio A">
+        </div>
+        <button class="primary" id="add-table-btn">Add table</button>
+      </div>
+      <ul class="chips" id="table-chips"></ul>
+      <p class="empty" id="table-empty">No tables added yet.</p>
+    </div>
+  </section>
+
+  <!-- ASSIGN PANEL -->
+  <section class="panel" id="panel-assign">
+    <h2>Assign Duty</h2>
+    <p class="lead">Pick a date and a staff member, then select the tables to give them. A table already held by someone else that day is locked; one staff member can hold several tables.</p>
+    <div class="card">
+      <div class="row">
+        <div class="field">
+          <label for="assign-date">Date</label>
+          <input type="date" id="assign-date">
+        </div>
+        <div class="field">
+          <label for="assign-staff">Staff</label>
+          <select id="assign-staff"></select>
+        </div>
+      </div>
+
+      <label style="margin-top:16px;">Tables</label>
+      <div class="table-grid" id="assign-table-grid"></div>
+      <p class="empty" id="assign-empty">Add staff and tables first in the "Staff &amp; Tables" tab.</p>
+
+      <div class="row" style="margin-top:16px;">
+        <button class="primary" id="save-assign-btn">Save assignment</button>
+        <button class="ghost" id="clear-staff-day-btn" title="Remove every table assigned to this staff on this date">Clear this staff's tables for the day</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS PANEL -->
+  <section class="panel" id="panel-status">
+    <h2>Table Status</h2>
+    <p class="lead">See, table by table, who is on duty for a chosen date — or reassign directly from here.</p>
+    <div class="card">
+      <div class="field" style="max-width:220px;">
+        <label for="status-date">Date</label>
+        <input type="date" id="status-date">
+      </div>
+      <div class="status-grid" id="status-grid"></div>
+      <p class="empty" id="status-empty">Add tables first in the "Staff &amp; Tables" tab.</p>
+    </div>
+  </section>
+
+  <!-- HISTORY PANEL -->
+  <section class="panel" id="panel-history">
+    <h2>View Records</h2>
+    <p class="lead">Browse saved assignments by date and/or staff member.</p>
+    <div class="card">
+      <div class="row filters">
+        <div class="field">
+          <label for="hist-date">Filter by date</label>
+          <input type="date" id="hist-date">
+        </div>
+        <div class="field">
+          <label for="hist-staff">Filter by staff</label>
+          <select id="hist-staff"><option value="">All staff</option></select>
+        </div>
+        <button class="ghost" id="hist-clear-btn" style="align-self:flex-end;">Clear filters</button>
+      </div>
+      <table class="history">
+        <thead><tr><th>Date</th><th>Table</th><th>Staff</th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table>
+      <p class="empty" id="hist-empty">No records match.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer>All data stays on this device — nothing is sent anywhere.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  var KEYS = { staff: "duty_roster_staff", tables: "duty_roster_tables", assignments: "duty_roster_assignments" };
+
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); }
+    catch(e){ alert("Could not save data. Your browser may be blocking local storage."); }
+  }
+
+  var staffList = loadJSON(KEYS.staff, []);       // ["Ramesh","Priya"]
+  var tableList = loadJSON(KEYS.tables, []);       // ["Table 1","Table 2"]
+  var assignments = loadJSON(KEYS.assignments, {}); // { "2026-07-23": { "Table 1": "Ramesh" } }
+
+  function todayStr(){
+    var d = new Date();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear()+"-"+m+"-"+day;
+  }
+
+  // ---------- NAV ----------
+  var navButtons = document.querySelectorAll("nav button");
+  var panels = document.querySelectorAll(".panel");
+  navButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      navButtons.forEach(function(b){ b.classList.remove("active"); });
+      panels.forEach(function(p){ p.classList.remove("active"); });
+      btn.classList.add("active");
+      document.getElementById("panel-"+btn.dataset.panel).classList.add("active");
+      if(btn.dataset.panel === "assign") renderAssignPanel();
+      if(btn.dataset.panel === "status") renderStatusPanel();
+      if(btn.dataset.panel === "history") renderHistoryPanel();
+    });
+  });
+
+  // ---------- SETUP: STAFF ----------
+  var staffInput = document.getElementById("staff-input");
+  document.getElementById("add-staff-btn").addEventListener("click", addStaff);
+  staffInput.addEventListener("keydown", function(e){ if(e.key === "Enter") addStaff(); });
+
+  function addStaff(){
+    var name = staffInput.value.trim();
+    if(!name) return;
+    if(staffList.some(function(s){ return s.toLowerCase() === name.toLowerCase(); })){
+      alert(name + " is already on the staff list.");
+      return;
+    }
+    staffList.push(name);
+    saveJSON(KEYS.staff, staffList);
+    staffInput.value = "";
+    renderSetup();
+  }
+
+  function removeStaff(name){
+    if(!confirm('Remove "'+name+'" from staff? Their past assignment records will stay in history.')) return;
+    staffList = staffList.filter(function(s){ return s !== name; });
+    saveJSON(KEYS.staff, staffList);
+    renderSetup();
+  }
+
+  // ---------- SETUP: TABLES ----------
+  var tableInput = document.getElementById("table-input");
+  document.getElementById("add-table-btn").addEventListener("click", addTable);
+  tableInput.addEventListener("keydown", function(e){ if(e.key === "Enter") addTable(); });
+
+  function addTable(){
+    var name = tableInput.value.trim();
+    if(!name) return;
+    if(tableList.some(function(t){ return t.toLowerCase() === name.toLowerCase(); })){
+      alert(name + " already exists.");
+      return;
+    }
+    tableList.push(name);
+    saveJSON(KEYS.tables, tableList);
+    tableInput.value = "";
+    renderSetup();
+  }
+
+  function removeTable(name){
+    if(!confirm('Remove "'+name+'"? Their past assignment records will stay in history.')) return;
+    tableList = tableList.filter(function(t){ return t !== name; });
+    saveJSON(KEYS.tables, tableList);
+    renderSetup();
+  }
+
+  function renderSetup(){
+    var sChips = document.getElementById("staff-chips");
+    sChips.innerHTML = "";
+    staffList.forEach(function(name){
+      var li = document.createElement("li");
+      li.textContent = name + " ";
+      var btn = document.createElement("button");
+      btn.textContent = "×";
+      btn.title = "Remove " + name;
+      btn.addEventListener("click", function(){ removeStaff(name); });
+      li.appendChild(btn);
+      sChips.appendChild(li);
+    });
+    document.getElementById("staff-empty").style.display = staffList.length ? "none" : "block";
+
+    var tChips = document.getElementById("table-chips");
+    tChips.innerHTML = "";
+    tableList.forEach(function(name){
+      var li = document.createElement("li");
+      li.textContent = name + " ";
+      var btn = document.createElement("button");
+      btn.textContent = "×";
+      btn.title = "Remove " + name;
+      btn.addEventListener("click", function(){ removeTable(name); });
+      li.appendChild(btn);
+      tChips.appendChild(li);
+    });
+    document.getElementById("table-empty").style.display = tableList.length ? "none" : "block";
+  }
+
+  // ---------- ASSIGN PANEL ----------
+  var assignDateInput = document.getElementById("assign-date");
+  var assignStaffSelect = document.getElementById("assign-staff");
+  assignDateInput.value = todayStr();
+
+  assignDateInput.addEventListener("change", renderAssignPanel);
+  assignStaffSelect.addEventListener("change", renderAssignPanel);
+
+  function renderAssignPanel(){
+    // staff dropdown
+    var prevStaff = assignStaffSelect.value;
+    assignStaffSelect.innerHTML = "";
+    staffList.forEach(function(name){
+      var opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      assignStaffSelect.appendChild(opt);
+    });
+    if(staffList.includes(prevStaff)) assignStaffSelect.value = prevStaff;
+
+    var date = assignDateInput.value || todayStr();
+    var dayMap = assignments[date] || {};
+    var currentStaff = assignStaffSelect.value;
+
+    var grid = document.getElementById("assign-table-grid");
+    grid.innerHTML = "";
+    document.getElementById("assign-empty").style.display = (staffList.length && tableList.length) ? "none" : "block";
+
+    tableList.forEach(function(tname){
+      var occupant = dayMap[tname];
+      var isMine = occupant === currentStaff;
+      var isTakenByOther = occupant && !isMine;
+
+      var wrap = document.createElement("label");
+      wrap.className = "table-pick" + (isTakenByOther ? " disabled" : "");
+
+      var cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.value = tname;
+      cb.checked = !!isMine;
+      cb.disabled = isTakenByOther;
+
+      var textWrap = document.createElement("span");
+      var nameSpan = document.createElement("span");
+      nameSpan.className = "name";
+      nameSpan.textContent = tname;
+      var statusSpan = document.createElement("span");
+      if(isTakenByOther){
+        statusSpan.className = "status";
+        statusSpan.textContent = "Assigned to " + occupant;
+      } else {
+        statusSpan.className = "status free";
+        statusSpan.textContent = isMine ? "Assigned to " + currentStaff : "Available";
+      }
+      textWrap.appendChild(nameSpan);
+      textWrap.appendChild(document.createElement("br"));
+      textWrap.appendChild(statusSpan);
+
+      wrap.appendChild(cb);
+      wrap.appendChild(textWrap);
+      grid.appendChild(wrap);
+    });
+  }
+
+  document.getElementById("save-assign-btn").addEventListener("click", function(){
+    if(!staffList.length){ alert("Add a staff member first."); return; }
+    if(!tableList.length){ alert("Add a table first."); return; }
+    var date = assignDateInput.value || todayStr();
+    var staff = assignStaffSelect.value;
+    if(!staff){ alert("Select a staff member."); return; }
+
+    var dayMap = assignments[date] || {};
+    var checked = Array.from(document.querySelectorAll("#assign-table-grid input[type=checkbox]"));
+
+    checked.forEach(function(cb){
+      var tname = cb.value;
+      var occupant = dayMap[tname];
+      if(cb.checked){
+        if(occupant && occupant !== staff) return; // safety: never overwrite another staff's table
+        dayMap[tname] = staff;
+      } else {
+        if(occupant === staff) delete dayMap[tname];
+      }
+    });
+
+    assignments[date] = dayMap;
+    saveJSON(KEYS.assignments, assignments);
+    renderAssignPanel();
+    renderStatusPanel();
+    renderHistoryPanel();
+    flashSaved();
+  });
+
+  document.getElementById("clear-staff-day-btn").addEventListener("click", function(){
+    var date = assignDateInput.value || todayStr();
+    var staff = assignStaffSelect.value;
+    if(!staff) return;
+    var dayMap = assignments[date] || {};
+    var had = false;
+    Object.keys(dayMap).forEach(function(t){
+      if(dayMap[t] === staff){ delete dayMap[t]; had = true; }
+    });
+    if(!had) return;
+    assignments[date] = dayMap;
+    saveJSON(KEYS.assignments, assignments);
+    renderAssignPanel();
+    renderStatusPanel();
+    renderHistoryPanel();
+  });
+
+  function flashSaved(){
+    var btn = document.getElementById("save-assign-btn");
+    var original = btn.textContent;
+    btn.textContent = "Saved ✓";
+    setTimeout(function(){ btn.textContent = original; }, 1200);
+  }
+
+  // ---------- STATUS PANEL ----------
+  var statusDateInput = document.getElementById("status-date");
+  statusDateInput.value = todayStr();
+  statusDateInput.addEventListener("change", renderStatusPanel);
+
+  function renderStatusPanel(){
+    var date = statusDateInput.value || todayStr();
+    var dayMap = assignments[date] || {};
+    var grid = document.getElementById("status-grid");
+    grid.innerHTML = "";
+    document.getElementById("status-empty").style.display = tableList.length ? "none" : "block";
+
+    tableList.forEach(function(tname){
+      var occupant = dayMap[tname];
+      var card = document.createElement("div");
+      card.className = "status-card " + (occupant ? "taken" : "free");
+
+      var title = document.createElement("div");
+      title.className = "t-name";
+      title.textContent = tname;
+
+      var who = document.createElement("div");
+      who.className = "t-who " + (occupant ? "taken" : "free");
+      who.textContent = occupant ? ("On duty: " + occupant) : "Available";
+
+      var select = document.createElement("select");
+      var noneOpt = document.createElement("option");
+      noneOpt.value = ""; noneOpt.textContent = "— Available —";
+      select.appendChild(noneOpt);
+      staffList.forEach(function(sname){
+        var opt = document.createElement("option");
+        opt.value = sname; opt.textContent = sname;
+        select.appendChild(opt);
+      });
+      select.value = occupant || "";
+      select.addEventListener("change", function(){
+        var val = select.value;
+        var map = assignments[date] || {};
+        if(val) map[tname] = val; else delete map[tname];
+        assignments[date] = map;
+        saveJSON(KEYS.assignments, assignments);
+        renderStatusPanel();
+        renderAssignPanel();
+        renderHistoryPanel();
+      });
+
+      card.appendChild(title);
+      card.appendChild(who);
+      card.appendChild(select);
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------- HISTORY PANEL ----------
+  var histDate = document.getElementById("hist-date");
+  var histStaff = document.getElementById("hist-staff");
+  histDate.addEventListener("change", renderHistoryPanel);
+  histStaff.addEventListener("change", renderHistoryPanel);
+  document.getElementById("hist-clear-btn").addEventListener("click", function(){
+    histDate.value = ""; histStaff.value = ""; renderHistoryPanel();
+  });
+
+  function renderHistoryPanel(){
+    var prev = histStaff.value;
+    histStaff.innerHTML = '<option value="">All staff</option>';
+    staffList.forEach(function(name){
+      var opt = document.createElement("option");
+      opt.value = name; opt.textContent = name;
+      histStaff.appendChild(opt);
+    });
+    if(staffList.includes(prev)) histStaff.value = prev;
+
+    var dateFilter = histDate.value;
+    var staffFilter = histStaff.value;
+
+    var rows = [];
+    Object.keys(assignments).sort().reverse().forEach(function(date){
+      if(dateFilter && date !== dateFilter) return;
+      var dayMap = assignments[date];
+      Object.keys(dayMap).sort().forEach(function(tname){
+        var sname = dayMap[tname];
+        if(staffFilter && sname !== staffFilter) return;
+        rows.push({date: date, table: tname, staff: sname});
+      });
+    });
+
+    var body = document.getElementById("hist-body");
+    body.innerHTML = "";
+    rows.forEach(function(r){
+      var tr = document.createElement("tr");
+      var d = document.createElement("td"); d.textContent = r.date;
+      var t = document.createElement("td"); t.textContent = r.table;
+      var s = document.createElement("td"); s.textContent = r.staff;
+      tr.appendChild(d); tr.appendChild(t); tr.appendChild(s);
+      body.appendChild(tr);
+    });
+    document.getElementById("hist-empty").style.display = rows.length ? "none" : "block";
+  }
+
+  // ---------- INIT ----------
+  renderSetup();
+  renderAssignPanel();
+  renderStatusPanel();
+  renderHistoryPanel();
+})();
+</script>
+
+</body>
+</html>
